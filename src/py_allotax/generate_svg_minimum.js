@@ -94,9 +94,11 @@ function renderDashboard(props) {
     const diamond_dat = dat.counts;
     
     // Calculate derived values
+    const maxRank1 = d3.max(me[0].ranks);
+    const maxRank2 = d3.max(me[1].ranks);
     const maxlog10 = Math.ceil(Math.max(
-      Math.log10(Math.max(...me[0].ranks)),
-      Math.log10(Math.max(...me[1].ranks))
+      Math.log10(maxRank1),
+      Math.log10(maxRank2)
     ));
     
     const max_count_log = Math.ceil(Math.log10(d3.max(diamond_dat, d => d.value))) + 1;
