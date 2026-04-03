@@ -45,20 +45,20 @@ def generate_svg(
         Dict containing RTD data if format is rtd-*, None otherwise
     """
     verify_input_data(json_file_1, json_file_2)
-    with open(json_file_1, "r") as file:
-        data1_json = json.loads(file.read())
-    with open(json_file_2, "r") as file:
-        data2_json = json.loads(file.read())
-
-    # Write the json data to a temporary file
-    temp_file_path = tempfile.mktemp(suffix=".mjs")
-    with open(temp_file_path, "w") as file:
-        file.write(f"const data1 = {json.dumps(data1_json)};\n")
-        file.write(f"const data2 = {json.dumps(data2_json)};\n")
-        file.write(f"const alpha = {alpha};\n")
-        file.write(f"const title1 = \"{title1}\";\n")
-        file.write(f"const title2 = \"{title2}\";\n")
-        file.write("export { data1, data2, alpha, title1, title2 };")
+    # Write metadata to a temporary file so large input corpora do not need to be
+    # embedded into a generated JS module.
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, encoding="utf-8") as file:
+        temp_file_path = file.name
+        json.dump(
+            {
+                "json_file_1": os.path.abspath(json_file_1),
+                "json_file_2": os.path.abspath(json_file_2),
+                "alpha": alpha,
+                "title1": title1,
+                "title2": title2,
+            },
+            file,
+        )
 
     js_file_path = resources.files('py_allotax').joinpath('generate_svg_minimum.js')
     

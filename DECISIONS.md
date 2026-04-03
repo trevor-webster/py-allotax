@@ -49,3 +49,36 @@ Regarding the ideation below, we ended up going with the following workflow usin
     - ability to retrieve intermediate desired results to analyze or visualize in other tools.
 1. Write up some examples, including a use case for big data using multiprocessing locally.
 1. Improve or add more HTML to image conversion method(s).
+
+## Text cleaning decisions
+
+Downloaded `.txt` books used for corpus preparation are cleaned with targeted deterministic rules rather than whole-file encoding repair.
+
+These files are treated as downloaded text exports/conversions with possible extraction artifacts. The cleaning rationale does not depend on a specific upstream tool such as `epub2txt`; the same rules apply whether the corruption came from EPUB export, PDF-to-text conversion, OCR post-processing, site-side text export, browser copy/paste, or another intermediate encoding/conversion step.
+
+### Rules
+1. Normalize common mojibake punctuation to simple ASCII equivalents before cleanup:
+   - apostrophes like `???` -> `'`
+   - quotes like `???` / `???` -> `"`
+   - dashes like `???` / `???` -> `-`
+   - ellipses like `???` -> `...`
+   - broken spaces like `???` and non-breaking spaces -> normal spaces
+1. Keep punctuation only when it appears inside a token:
+   - `.` for `\w+\.\w+`
+   - `,` for `\w+,\w+`, including numbers like `40,000`
+   - `-` for `\w+-\w+`
+   - `'` for `\w+'\w+`
+1. Replace all other punctuation with spaces.
+1. Preserve valid Unicode letters and diacritics that are already correct, such as `Del?ge`, `Neuch?tel`, `Pal?orient`, and `M?ori`.
+1. Remove repeated standalone title/header lines after the first kept occurrence when the cleaner is given an explicit title.
+1. Remove obvious layout junk such as separator lines (`* * *`), isolated roman-numeral page markers, and isolated `Q` lines from extracted front matter.
+1. Normalize whitespace after cleanup by collapsing repeated spaces, trimming line edges, and collapsing 3+ blank lines to 2.
+1. Do not perform intelligent lexical inference or context-based word repair during cleaning.
+   - Example: if a bad conversion step has already produced `codeprograms`, the cleaner does not guess that it should become `code programs`.
+   - Reason: those guesses are not deterministic and can introduce false corrections at scale.
+
+### Rejected approach
+1. Do not apply broad cp1252/latin1-to-utf8 recoding across the whole document.
+   - This was tested and made some downloaded texts less readable by merging word boundaries and removing legitimate apostrophes.
+1. Do not use heuristic or LLM-style word-boundary reconstruction inside the cleaner.
+   - If a corpus contains merged words or other semantic corruption with no easy deterministic rule, those cases should be corrected manually or by a separate explicitly heuristic workflow, not by the default cleaner.

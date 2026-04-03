@@ -46,7 +46,7 @@ function renderDashboard(props) {
       process.exit(1);
     }
     
-    // Load data from temp file
+    // Load metadata from temp file
     const fullTempPath = resolve(__dirname, tempFilePath);
     
     if (!fs.existsSync(fullTempPath)) {
@@ -54,8 +54,16 @@ function renderDashboard(props) {
       process.exit(1);
     }
     
-    const tempData = await import(`file://${fullTempPath}`);
-    const { data1, data2, alpha, title1, title2 } = tempData;
+    const tempData = JSON.parse(fs.readFileSync(fullTempPath, 'utf8'));
+    const {
+      json_file_1: jsonFile1,
+      json_file_2: jsonFile2,
+      alpha,
+      title1,
+      title2
+    } = tempData;
+    const data1 = JSON.parse(fs.readFileSync(jsonFile1, 'utf8'));
+    const data2 = JSON.parse(fs.readFileSync(jsonFile2, 'utf8'));
     
     console.log('Processing data...');
     
